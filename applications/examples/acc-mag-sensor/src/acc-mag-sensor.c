@@ -69,7 +69,17 @@ void EXTI15_10_IRQHandler(void) {
   printINF("it works");
  }
 
- 
+ void lightsensor_measurement(void){
+  osMutexWait(i2cMutexId, osWaitForever);
+  int clear_light = getClearData();
+  osMutexRelease(i2cMutexId);
+  print_light_intensity(clear_light);
+}
+
+void print_light_intensity(int data){
+  printINF("Light intensity: %d  lux \r\n", data);
+}
+
 void accelerometer_measurement(void){
 	uint16_t accDataRaw[3];
   osMutexWait(i2cMutexId, osWaitForever);
