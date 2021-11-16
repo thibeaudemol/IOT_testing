@@ -1,8 +1,9 @@
 #include "acc-mag-sensor.h"
 #include "LSM303AGRSensor.h"
+#include "TCS3472.h"
 
 #define accelerometer_timer    3
-#define magnetometer_timer    3
+#define lightsensor_timer    3
 
 int main(void)
 {
@@ -14,6 +15,7 @@ int main(void)
 	LSM303AGR_MAG_reset();
   HAL_Delay(100);
 	LSM303AGR_init();
+  TC3472_init(&common_I2C); //light sensor
 
   /* GPIO Ports Clock Enable */
    HAL_Init();
@@ -40,10 +42,10 @@ int main(void)
   accelerometer_timer_id = osTimerCreate(osTimer(accsensor_Tim), osTimerPeriodic, NULL);
   osTimerStart(accelerometer_timer_id, accelerometer_timer * 1000);
 
-  osTimerDef(magsensor_Tim, magnetometer_measurement);
-  magnetometer_timer_id = osTimerCreate(osTimer(magsensor_Tim), osTimerPeriodic, NULL);
-  osTimerStart(magnetometer_timer_id, magnetometer_timer * 1000);
-  
+  osTimerDef(lightsensor_Tim, lightsensor_measurement);
+  lightsensor_timer_id = osTimerCreate(osTimer(lightsensor_Tim), osTimerPeriodic, NULL);
+  osTimerStart(lightsensor_timer_id, lightsensor_timer * 1000);
+
   // MUTEX
   osMutexDef(txMutex);
   i2cMutexId = osMutexCreate(osMutex(txMutex));
@@ -76,19 +78,8 @@ void accelerometer_measurement(void){
   print_accelerometer(accDataRaw);
 }
 
-void magnetometer_measurement(void){
-  uint16_t magDataRaw[3];
-  osMutexWait(i2cMutexId, osWaitForever);
-  LSM303AGR_MAG_readMagneticRawData(magDataRaw);
-  osMutexRelease(i2cMutexId);
-  print_magnetometer(magDataRaw);
-}
-
 void print_accelerometer(uint16_t data[]){
   printINF("Accelerometer data: X: %d Y: %d Z: %d \r\n", data[0], data[1], data[2]);
-}
-void print_magnetometer(uint16_t data[]){
- /* printINF("Magnetometer data: X: %d Y: %d Z: %d \r\n", data[0], data[1], data[2]);*/
 }
 
 void StartDefaultTask(void const *argument)
